@@ -41,42 +41,54 @@ mkdir -p "$DOWNLOAD_DIR_BIN"
 
 # --- Main Download Logic ---
 
-# 1. Download VCF CLI (formerly Tanzu CLI)
-# Note: $VCF_CLI_URL must be defined in your env.config pointing to the Broadcom Support Portal download link or internal mirror
+# 1. Download VCF CLI
+# Note: $VCF_CLI_URL must be defined in your env.config pointing to the Broadcom Support Portal download link
 echo "Downloading VCF CLI and Standard Packages..."
 
 if [ -z "$VCF_CLI_URL" ]; then
     echo "Warning: VCF_CLI_URL is not set in env.config. Skipping VCF CLI download."
 else
     wget -q -O "$DOWNLOAD_DIR_BIN"/vcf-cli-linux-amd64.tar.gz "$VCF_CLI_URL"
-    # Extract and prepare VCF binary
     tar -xzvf "$DOWNLOAD_DIR_BIN"/vcf-cli-linux-amd64.tar.gz -C "$DOWNLOAD_DIR_BIN"
-    # Assuming standard VCF CLI archive structure; adjust path if necessary based on specific tarball layout
+    # Find the binary in the extracted folder and move it
     find "$DOWNLOAD_DIR_BIN" -name "vcf" -type f -exec sudo cp {} /usr/local/bin/ \;
     chmod +x /usr/local/bin/vcf
 fi
 
-# 2. Download Standard Packages Repo (TKG packages) using standalone imgpkg
-# Note: VCF 9 still uses the TKG standard repository for Kubernetes packages
+# 2. Download Standard Packages Bundle (TKG packages) using standalone imgpkg
 echo "Downloading Standard Packages Bundle..."
 imgpkg copy -b projects.registry.vmware.com/tkg/packages/standard/repo:"$TANZU_STANDARD_REPO_VERSION" \
     --to-tar "$DOWNLOAD_DIR_BIN"/standard-packages.tar \
     --registry-verify-certs=false
 
-# 3. Supervisor Services Configuration
+# 3. Supervisor Services Configuration (Updated Broadcom Links)
 echo "Downloading all Supervisor Services configuration files..."
 
-# Ensure these URLs are valid for your specific VCF 9 version/entitlement
+# TKG Service
 wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-tkg-service.yaml          'https://packages.broadcom.com/artifactory/vsphere-distro/vsphere/iaas/kubernetes-service/3.3.0-package.yaml'
-wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-cci-supervisor-service.yaml 'https://vmwaresaas.jfrog.io/artifactory/supervisor-services/cci-supervisor-service/v1.0.2/cci-supervisor-service.yml'
-wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-cci-values.yaml       'https://vmwaresaas.jfrog.io/artifactory/supervisor-services/cci-supervisor-service/v1.0.2/values.yml'
-wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-harbor.yaml           'https://vmwaresaas.jfrog.io/ui/api/v1/download?repoKey=supervisor-services&path=harbor/v2.9.1/harbor.yml'
-wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-harbor-values.yaml    'https://vmwaresaas.jfrog.io/ui/api/v1/download?repoKey=supervisor-services&path=harbor/v2.9.1/harbor-data-values.yml'
-wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-contour.yaml          'https://vmwaresaas.jfrog.io/ui/api/v1/download?repoKey=supervisor-services&path=contour/v1.28.2/contour.yml'
-wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-externaldns.yaml      'https://vmwaresaas.jfrog.io/ui/api/v1/download?repoKey=supervisor-services&path=external-dns/v0.13.4/external-dns.yml'
-wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-nsxmgmt.yaml          'https://vmwaresaas.jfrog.io/ui/api/v1/download?repoKey=supervisor-services&path=nsx-management-proxy/v0.2.1/nsx-management-proxy.yml'
+
+# CCI Service
+wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-cci-supervisor-service.yaml 'https://projects.packages.broadcom.com/artifactory/supervisor-services/cci-supervisor-service/v1.0.2/cci-supervisor-service.yml'
+wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-cci-values.yaml             'https://projects.packages.broadcom.com/artifactory/supervisor-services/cci-supervisor-service/v1.0.2/values.yml'
+wget -q -O "$DOWNLOAD_DIR_YML"/supsvc_config_from_automation.py   'https://projects.packages.broadcom.com/artifactory/supervisor-services/cci-supervisor-service/v1.0.2/service_config_from_automation.py'
+
+# Harbor
+wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-harbor.yaml           'https://projects.packages.broadcom.com/artifactory/supervisor-services/harbor/v2.9.1/harbor.yml'
+wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-harbor-values.yaml    'https://projects.packages.broadcom.com/artifactory/supervisor-services/harbor/v2.9.1/harbor-data-values.yml'
+
+# Contour
+wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-contour.yaml          'https://projects.packages.broadcom.com/artifactory/supervisor-services/contour/v1.28.2/contour.yml'
+
+# External DNS
+wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-externaldns.yaml      'https://projects.packages.broadcom.com/artifactory/supervisor-services/external-dns/v0.13.4/external-dns.yml'
+
+# NSX Management Proxy
+wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-nsxmgmt.yaml          'https://projects.packages.broadcom.com/artifactory/supervisor-services/nsx-management-proxy/v0.2.1/nsx-management-proxy.yml'
+
+# ArgoCD (Community/GitHub)
 wget -q -O "$DOWNLOAD_DIR_YML"/supsvc-argocd-operator.yaml  'https://raw.githubusercontent.com/vsphere-tmm/Supervisor-Services/refs/heads/main/supervisor-services-labs/argocd-operator/v0.12.0/argocd-operator.yaml'
-wget -q -O "$DOWNLOAD_DIR_YML"/supsvc_config_from_automation.py       'https://vmwaresaas.jfrog.io/artifactory/supervisor-services/cci-supervisor-service/v1.0.2/service_config_from_automation.py'
+
+# --- Image Processing ---
 
 echo
 echo "Downloading Supervisor Services images using imgpkg..."
@@ -93,8 +105,7 @@ for file in "$DOWNLOAD_DIR_YML"/*.yaml; do
         echo "Now downloading $image..."
         
         # Switched from 'tanzu imgpkg copy' to 'imgpkg copy'
-        # Added --registry-verify-certs=false to handle potential self-signed certs in source if needed, 
-        # or remove if strict verification is desired.
+        # Added --registry-verify-certs=false for flexibility with internal/self-signed registries
         imgpkg copy -b "$image" \
             --to-tar "$DOWNLOAD_DIR_TAR"/"$file_name".tar \
             --cosign-signatures \
@@ -116,11 +127,10 @@ done
 
 if [[ $SYNC_DIRECTORIES == "True" ]]; then
     echo "Syncing files to admin host..."
-    # Removed 'tanzu-common-files-bin' from rsync list if it's no longer a created directory
-    # Updated to include generic bin directory
+    # Sync supervisor services and the bin directory containing VCF CLI/Tools
     sshpass -p "$HTTP_PASSWORD" rsync -avz {supervisor-services*,"$DOWNLOAD_DIR_BIN"} "$HTTP_USERNAME"@"$HTTP_HOST":"$ADMIN_RESOURCES_DIR"
 
-    # Copy yq and imgpkg to admin host
+    # Copy yq and imgpkg binaries to admin host
     sshpass -p "$HTTP_PASSWORD" rsync -avz /usr/bin/yq "$HTTP_USERNAME"@"$HTTP_HOST":"$ADMIN_RESOURCES_DIR"
     sshpass -p "$HTTP_PASSWORD" rsync -avz /usr/local/bin/imgpkg "$HTTP_USERNAME"@"$HTTP_HOST":"$ADMIN_RESOURCES_DIR"
 fi
