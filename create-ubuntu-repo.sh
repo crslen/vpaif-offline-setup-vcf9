@@ -29,8 +29,8 @@ set _tilde 0
 deb http://archive.ubuntu.com/ubuntu jammy main restricted universe multiverse
 deb http://archive.ubuntu.com/ubuntu jammy-security main restricted universe multiverse
 deb http://archive.ubuntu.com/ubuntu jammy-updates main restricted universe multiverse
-#deb http://archive.ubuntu.com/ubuntu jammy-proposed main restricted universe multiverse
-deb http://archive.ubuntu.com/ubuntu jammy-backports main restricted universe multiverse
+# deb http://archive.ubuntu.com/ubuntu jammy-proposed main restricted universe multiverse
+# deb http://archive.ubuntu.com/ubuntu jammy-backports main restricted universe multiverse
 EOF
 
 # start mirroring
@@ -64,5 +64,5 @@ cp -av archive.ubuntu.com/ubuntu/ $BASTION_REPO_DIR/mirror/archive.ubuntu.com/ub
 
 #copy to http server in AG
 if [[ $SYNC_DIRECTORIES == "True" ]]; then
-  sshpass -p "$HTTP_PASSWORD" rsync -avz $BASTION_REPO_DIR/mirror/archive.ubuntu.com/ubuntu $HTTP_USERNAME@$HTTP_HOST:$REPO_LOCATION/debs
+  sshpass -p "$HTTP_PASSWORD" rsync -avz $BASTION_REPO_DIR/mirror/archive.ubuntu.com/ubuntu $HTTP_USERNAME@$HTTP_HOST:$REPO_LOCATION/ubuntu
 fi

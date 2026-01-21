@@ -9,7 +9,7 @@ VCENTER_VERSION=8 # set to 7 for vCenter 7
 VCENTER_HOSTNAME=rp-sm-n1-vc02.pse.lab
 VCENTER_USERNAME=administrator@wld.lab
 VCENTER_PASSWORD='VMware123!VMware123!'
-K8S_SUP_CLUSTER=airgapped  # Name of cluster where Supervisor is to be enabled
+K8S_SUP_CLUSTER=wld1  # Name of cluster where Supervisor is to be enabled
 K8S_CONTENT_LIBRARY=local-vks # Not required for 8.0 online install
 K8S_STORAGE_POLICY='vSAN Default Storage Policy'
 K8S_MGMT_PORTGROUP='segment1-192.168.17.96'
@@ -31,12 +31,12 @@ export AVI_USERNAME=admin
 export AVI_PASSWORD='VMware1!'
 
 #### NSX specifc details, Not required for VDS. 
-export NSX_MANAGER='172.30.132.67'
+export NSX_MANAGER='rp-sm-n1-nsx02.pse.lab'
 export NSX_USERNAME='admin'
-export NSX_PASSWORD='VMware@123!VMware@123!'
-export NSX_EDGE_CLUSTER='wld.edge1a'
+export NSX_PASSWORD='VMware123!VMware123!'
+export NSX_EDGE_CLUSTER='wld-edge1a'
 export NSX_T0_GATEWAY='gw'
-export NSX_DVS_PORTGROUP='segment1-192.168.17.96'
+export NSX_DVS_PORTGROUP='wld1-vds-01'
 export NSX_INGRESS_CIDR='172.22.0.0/22' # not required?
 export NSX_EGRESS_CIDR='192.168.17.32/27'
 export NSX_NAMESPACE_NETWORK='10.10.0.0/16'
@@ -78,7 +78,11 @@ fi
 ################################################
 # Login to VCenter and get Session ID
 ###############################################
-SESSION_ID=$(curl -sk -X POST https://${VCENTER_HOSTNAME}/rest/com/vmware/cis/session --user ${VCENTER_USERNAME}:${VCENTER_PASSWORD} |jq -r '.value')
+# curl -sk -X POST https://rp-sm-n1-vc02.pse.lab/rest/com/vmware/cis/session --user "administrator@wld.local:VMware123\!VMware123\!" |jq -r '.value'
+# curl -sk -X POST https://rp-sm-n1-vc02.pse.lab/api/session --user administrator@wld.local:VMware123\!VMware123\! |jq -r '.value'
+SESSION_ID=$(curl -sk -X POST https://${VCENTER_HOSTNAME}/api/session --user ${VCENTER_USERNAME})
+SESSION_ID="2a5c1383488484aafa0b03b1ad2fe198"
+echo $SESSION_ID
 if [ -z "${SESSION_ID}" ]
 then
 	echo "Error: Could not connect to the VCenter. Please validate!!"
@@ -91,6 +95,7 @@ HEADER_SESSIONID="vmware-api-session-id: ${SESSION_ID}"
 # Get cluster details from vCenter
 ###############################################
 echo "Searching for Cluster ${K8S_SUP_CLUSTER} ..."
+echo $HEADER_SESSIONID
 response=$(curl -ks --write-out "%{http_code}" -X GET  -H "${HEADER_SESSIONID}" https://${VCENTER_HOSTNAME}/api/vcenter/cluster --output /tmp/temp_cluster.json)
 if [[ "${response}" -ne 200 ]] ; then
   echo "Error: Could not fetch clusters. Please validate!!"
@@ -176,6 +181,7 @@ then
         ###############################################
         echo "Searching for NSX compatible VDS switch ..."
         response=$(curl -ks --write-out "%{http_code}" -X POST  -H "${HEADER_SESSIONID}" https://${VCENTER_HOSTNAME}/api/vcenter/namespace-management/networks/nsx/distributed-switches?action=check_compatibility --output /tmp/temp_vds.json)
+        echo $response
         if [[ "${response}" -ne 200 ]] ; then
                 echo "Error: Could not fetch VDS details. Please validate!!"
                 exit 1
@@ -251,10 +257,11 @@ fi
 envsubst < cluster.json > temp_final.json
 
 echo "Enabling WCP on cluster ${TKGClusterID} ..."
-curl -ks -X POST -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" -d "@temp_final.json" https://${VCENTER_HOSTNAME}/api/vcenter/namespace-management/clusters/${TKGClusterID}?action=enable
-
+# curl -ks -X POST -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" -d "@temp_final.json" https://${VCENTER_HOSTNAME}/api/vcenter/namespace-management/clusters/${TKGClusterID}?action=enable
+# new vcf9 api
+curl -ks -X POST -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" -d "@temp_final.json" https://${VCENTER_HOSTNAME}/api/vcenter/namespace-management/supervisors?action=enable_on_zones
 # TODO while configuring, keep checking for the status of the Supervisor until ready
 
 rm -f /tmp/temp_*.*
-rm -f temp_final.json
-rm -f cluster.json
+# rm -f temp_final.json
+# rm -f cluster.json

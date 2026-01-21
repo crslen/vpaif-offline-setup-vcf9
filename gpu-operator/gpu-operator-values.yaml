@@ -13,8 +13,7 @@ psa:
   enabled: false
 
 cdi:
-  enabled: false
-  default: false
+  enabled: true
 
 sandboxWorkloads:
   enabled: false
@@ -50,8 +49,8 @@ daemonsets:
     maxUnavailable: "1"
 
 validator:
-  repository: ag-registry.set.lab/nvidia-cache/nvidia/cloud-native
-  image: gpu-operator-validator
+  repository: nvcr.io/nvidia
+  image: gpu-operator
   # If version is not specified, then default is to use chart.AppVersion
   #version: ""
   imagePullPolicy: IfNotPresent
@@ -60,12 +59,10 @@ validator:
   args: []
   resources: {}
   plugin:
-    env:
-      - name: WITH_WORKLOAD
-        value: "false"
+    env: []
 
 operator:
-  repository: ag-registry.set.lab/nvidia-cache/nvidia
+  repository: nvcr.io/nvidia
   image: gpu-operator
   # If version is not specified, then default is to use chart.AppVersion
   #version: ""
@@ -80,9 +77,9 @@ operator:
   # to be passed during helm upgrade.
   upgradeCRD: true
   initContainer:
+    repository: nvcr.io/nvidia
     image: cuda
-    repository: ag-registry.set.lab/nvidia-cache/nvidia
-    version: 12.8.1-base-ubi9
+    version: 13.0.1-base-ubi9
     imagePullPolicy: IfNotPresent
   tolerations:
   - key: "node-role.kubernetes.io/master"
@@ -144,9 +141,9 @@ driver:
   # use pre-compiled packages for NVIDIA driver installation.
   # only supported for as a tech-preview feature on ubuntu22.04 kernels.
   usePrecompiled: false
-  repository: ag-registry.set.lab/nvidia-cache/nvidia
+  repository: nvcr.io/nvidia
   image: driver
-  version: "570.124.06"
+  version: "580.105.08"
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   startupProbe:
@@ -192,25 +189,13 @@ driver:
       timeoutSeconds: 300
       deleteEmptyDir: false
   manager:
+    repository: nvcr.io/nvidia/cloud-native
     image: k8s-driver-manager
-    repository: ag-registry.set.lab/nvidia-cache/nvidia/cloud-native
     # When choosing a different version of k8s-driver-manager, DO NOT downgrade to a version lower than v0.6.4
     # to ensure k8s-driver-manager stays compatible with gpu-operator starting from v24.3.0
-    version: v0.8.0
+    version: v0.9.1
     imagePullPolicy: IfNotPresent
-    env:
-      - name: ENABLE_GPU_POD_EVICTION
-        value: "true"
-      - name: ENABLE_AUTO_DRAIN
-        value: "false"
-      - name: DRAIN_USE_FORCE
-        value: "false"
-      - name: DRAIN_POD_SELECTOR_LABEL
-        value: ""
-      - name: DRAIN_TIMEOUT_SECONDS
-        value: "0s"
-      - name: DRAIN_DELETE_EMPTYDIR_DATA
-        value: "false"
+    env: []
   env: []
   resources: {}
   # Private mirror repository configuration
@@ -221,7 +206,7 @@ driver:
     name: ""
   # vGPU licensing configuration
   licensingConfig:
-    configMapName: ""
+    secretName: ""
     nlsEnabled: true
   # vGPU topology daemon configuration
   virtualTopology:
@@ -229,12 +214,14 @@ driver:
   # kernel module configuration for NVIDIA driver
   kernelModuleConfig:
     name: ""
+  # Name of Kubernetes Secret which contains secrets to be passed in as environment variables
+  secretEnv: ""
 
 toolkit:
   enabled: true
-  repository: ag-registry.set.lab/nvidia-cache/nvidia/k8s
+  repository: nvcr.io/nvidia/k8s
   image: container-toolkit
-  version: v1.17.5-ubuntu20.04
+  version: v1.18.1
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   env: []
@@ -243,25 +230,13 @@ toolkit:
 
 devicePlugin:
   enabled: true
-  repository: ag-registry.set.lab/nvidia-cache/nvidia
+  repository: nvcr.io/nvidia
   image: k8s-device-plugin
-  version: v0.17.1
+  version: v0.18.1
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   args: []
-  env:
-    - name: PASS_DEVICE_SPECS
-      value: "true"
-    - name: FAIL_ON_INIT_ERROR
-      value: "true"
-    - name: DEVICE_LIST_STRATEGY
-      value: envvar
-    - name: DEVICE_ID_STRATEGY
-      value: uuid
-    - name: NVIDIA_VISIBLE_DEVICES
-      value: all
-    - name: NVIDIA_DRIVER_CAPABILITIES
-      value: all
+  env: []
   resources: {}
   # Plugin configuration
   # Use "name" to either point to an existing ConfigMap or to create a new one with a list of configurations(i.e with create=true).
@@ -301,9 +276,9 @@ devicePlugin:
 dcgm:
   # disabled by default to use embedded nv-hostengine by exporter
   enabled: false
-  repository: ag-registry.set.lab/nvidia-cache/nvidia/cloud-native
+  repository: nvcr.io/nvidia/cloud-native
   image: dcgm
-  version: 4.1.1-2-ubuntu22.04
+  version: 4.4.2-1-ubuntu22.04
   imagePullPolicy: IfNotPresent
   args: []
   env: []
@@ -311,18 +286,20 @@ dcgm:
 
 dcgmExporter:
   enabled: true
-  repository: ag-registry.set.lab/nvidia-cache/nvidia/k8s
+  repository: nvcr.io/nvidia/k8s
   image: dcgm-exporter
-  version: 4.1.1-4.0.4-ubuntu22.04
+  version: 4.4.2-4.7.0-distroless
   imagePullPolicy: IfNotPresent
-  env:
-    - name: DCGM_EXPORTER_LISTEN
-      value: ":9400"
-    - name: DCGM_EXPORTER_KUBERNETES
-      value: "true"
-    - name: DCGM_EXPORTER_COLLECTORS
-      value: "/etc/dcgm-exporter/dcp-metrics-included.csv"
+  env: []
   resources: {}
+  hostPID: false
+  # HPC job mapping configuration for correlating GPU metrics with HPC workload manager jobs
+  # This is used by HPC workload managers like Slurm to label GPU metrics with job IDs
+  # hpcJobMapping:
+  #   enabled: true
+  #   directory: /var/lib/dcgm-exporter/job-mapping
+  service:
+    internalTrafficPolicy: Cluster
   serviceMonitor:
     enabled: false
     interval: 15s
@@ -357,28 +334,22 @@ dcgmExporter:
       # DCGM_FI_DEV_MEM_CLOCK, gauge, Memory clock frequency (in MHz).
 gfd:
   enabled: true
-  repository: ag-registry.set.lab/nvidia-cache/nvidia
+  repository: nvcr.io/nvidia
   image: k8s-device-plugin
-  version: v0.17.1
+  version: v0.18.1
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
-  env:
-    - name: GFD_SLEEP_INTERVAL
-      value: 60s
-    - name: GFD_FAIL_ON_INIT_ERROR
-      value: "true"
+  env: []
   resources: {}
 
 migManager:
   enabled: true
-  repository: ag-registry.set.lab/nvidia-cache/nvidia/cloud-native
+  repository: nvcr.io/nvidia/cloud-native
   image: k8s-mig-manager
-  version: v0.12.1-ubuntu20.04
+  version: v0.13.1
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
-  env:
-    - name: WITH_REBOOT
-      value: "false"
+  env: []
   resources: {}
   # MIG configuration
   # Use "name" to either point to an existing ConfigMap or to create a new one with a list of configurations(i.e with create=true).
@@ -424,8 +395,8 @@ migManager:
 
 nodeStatusExporter:
   enabled: false
-  repository: ag-registry.set.lab/nvidia-cache/nvidia/cloud-native
-  image: gpu-operator-validator
+  repository: nvcr.io/nvidia
+  image: gpu-operator
   # If version is not specified, then default is to use chart.AppVersion
   #version: ""
   imagePullPolicy: IfNotPresent
@@ -434,9 +405,9 @@ nodeStatusExporter:
 
 gds:
   enabled: false
-  repository: ag-registry.set.lab/nvidia-cache/nvidia/cloud-native
+  repository: nvcr.io/nvidia/cloud-native
   image: nvidia-fs
-  version: "2.20.5"
+  version: "2.26.6"
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   env: []
@@ -444,9 +415,9 @@ gds:
 
 gdrcopy:
   enabled: false
-  repository: ag-registry.set.lab/nvidia-cache/nvidia/cloud-native
+  repository: nvcr.io/nvidia/cloud-native
   image: gdrdrv
-  version: "v2.4.4"
+  version: "v2.5.1"
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   env: []
@@ -462,23 +433,19 @@ vgpuManager:
   env: []
   resources: {}
   driverManager:
+    repository: nvcr.io/nvidia/cloud-native
     image: k8s-driver-manager
-    repository: ag-registry.set.lab/nvidia-cache/nvidia/cloud-native
     # When choosing a different version of k8s-driver-manager, DO NOT downgrade to a version lower than v0.6.4
     # to ensure k8s-driver-manager stays compatible with gpu-operator starting from v24.3.0
-    version: v0.8.0
+    version: v0.9.1
     imagePullPolicy: IfNotPresent
-    env:
-      - name: ENABLE_GPU_POD_EVICTION
-        value: "false"
-      - name: ENABLE_AUTO_DRAIN
-        value: "false"
+    env: []
 
 vgpuDeviceManager:
   enabled: true
-  repository: ag-registry.set.lab/nvidia-cache/nvidia/cloud-native
+  repository: nvcr.io/nvidia/cloud-native
   image: vgpu-device-manager
-  version: v0.3.0
+  version: v0.4.1
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   env: []
@@ -488,25 +455,21 @@ vgpuDeviceManager:
 
 vfioManager:
   enabled: true
-  repository: ag-registry.set.lab/nvidia-cache/nvidia
+  repository: nvcr.io/nvidia
   image: cuda
-  version: 12.8.1-base-ubi9
+  version: 13.0.1-base-ubi9
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   env: []
   resources: {}
   driverManager:
+    repository: nvcr.io/nvidia/cloud-native
     image: k8s-driver-manager
-    repository: ag-registry.set.lab/nvidia-cache/nvidia/cloud-native
     # When choosing a different version of k8s-driver-manager, DO NOT downgrade to a version lower than v0.6.4
     # to ensure k8s-driver-manager stays compatible with gpu-operator starting from v24.3.0
-    version: v0.8.0
+    version: v0.9.1
     imagePullPolicy: IfNotPresent
-    env:
-      - name: ENABLE_GPU_POD_EVICTION
-        value: "false"
-      - name: ENABLE_AUTO_DRAIN
-        value: "false"
+    env: []
 
 kataManager:
   enabled: false
@@ -516,15 +479,15 @@ kataManager:
       - name: kata-nvidia-gpu
         nodeSelector: {}
         artifacts:
-          url: ag-registry.set.lab/nvidia-cache/nvidia/cloud-native/kata-gpu-artifacts:ubuntu22.04-535.54.03
+          url: nvcr.io/nvidia/cloud-native/kata-gpu-artifacts:ubuntu22.04-535.54.03
           pullSecret: ""
       - name: kata-nvidia-gpu-snp
         nodeSelector:
           "nvidia.com/cc.capable": "true"
         artifacts:
-          url: ag-registry.set.lab/nvidia-cache/nvidia/cloud-native/kata-gpu-artifacts:ubuntu22.04-535.86.10-snp
+          url: nvcr.io/nvidia/cloud-native/kata-gpu-artifacts:ubuntu22.04-535.86.10-snp
           pullSecret: ""
-  repository: ag-registry.set.lab/nvidia-cache/nvidia/cloud-native
+  repository: nvcr.io/nvidia/cloud-native
   image: k8s-kata-manager
   version: v0.2.3
   imagePullPolicy: IfNotPresent
@@ -534,9 +497,9 @@ kataManager:
 
 sandboxDevicePlugin:
   enabled: true
-  repository: ag-registry.set.lab/nvidia-cache/nvidia
+  repository: nvcr.io/nvidia
   image: kubevirt-gpu-device-plugin
-  version: v1.3.1
+  version: v1.4.0
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   args: []
@@ -546,7 +509,7 @@ sandboxDevicePlugin:
 ccManager:
   enabled: false
   defaultMode: "off"
-  repository: ag-registry.set.lab/nvidia-cache/nvidia/cloud-native
+  repository: nvcr.io/nvidia/cloud-native
   image: k8s-cc-manager
   version: v0.1.1
   imagePullPolicy: IfNotPresent
@@ -557,7 +520,6 @@ ccManager:
   resources: {}
 
 node-feature-discovery:
-  enableNodeFeatureApi: true
   priorityClassName: system-node-critical
   gc:
     enable: true
@@ -603,4 +565,3 @@ node-feature-discovery:
       # resourceLabels: ["nvidia.com/feature-1","nvidia.com/feature-2"]
       # enableTaints: false
       # labelWhiteList: "nvidia.com/gpu"
-

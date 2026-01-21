@@ -37,26 +37,27 @@ else
   # If the library does not exist, create it
   echo "Library '$CL_VKS' does not exist. Creating it..."
   govc library.create $CL_VKS
-fi
 
 # Save original directory
 pushd . > /dev/null
 
-cd $DOWNLOAD_VKR_OVA
-FILE_WITH_EXTENSION=$(ls *.tar.gz)
-FILENAME=${FILE_WITH_EXTENSION%.tar.gz}
-echo $FILENAME
-echo $FILE_WITH_EXTENSION
-tar xvf $FILE_WITH_EXTENSION --transform 's|.*/||'
-mv ubuntu-ova.ovf $FILENAME.ovf
-rm ubuntu-ova.mf
-echo "Importing OVF"
-govc library.import $CL_VKS $FILENAME.ovf
-echo "Cleaning up"
-find . -type f | grep -v "$FILE_WITH_EXTENSION" | xargs rm -fr
+  cd $DOWNLOAD_VKR_OVA
+  FILE_WITH_EXTENSION=$(ls *.tar.gz)
+  FILENAME=${FILE_WITH_EXTENSION%.tar.gz}
+  echo $FILENAME
+  echo $FILE_WITH_EXTENSION
+  tar xvf $FILE_WITH_EXTENSION --transform 's|.*/||'
+  mv ubuntu-ova.ovf $FILENAME.ovf
+  rm ubuntu-ova.mf
+  echo "Importing OVF"
+  govc library.import $CL_VKS $FILENAME.ovf
+  echo "Cleaning up"
+  find . -type f | grep -v "$FILE_WITH_EXTENSION" | xargs rm -fr
 
-# Go back to original directory
-popd > /dev/null
+  # Go back to original directory
+  popd > /dev/null
+fi
+
 
 # upload to content library DLVM
 results=$(govc library.ls $CL_DLVM)
@@ -73,19 +74,13 @@ fi
 pushd . > /dev/null
 
 cd $DOWNLOAD_DLVM_OVA
-FILE_WITH_EXTENSION=$(ls *.tar.gz)
-FILENAME=${FILE_WITH_EXTENSION%.tar.gz}
+FILE_WITH_EXTENSION=$(ls *.ova)
+FILENAME=${FILE_WITH_EXTENSION%.ova}
 tar xvf $FILE_WITH_EXTENSION --transform 's|.*/||'
 echo "Importing OVF"
-govc library.import $CL_DLVM $FILENAME.ovf
+govc library.import $CL_DLVM $FILENAME.ova
 echo "Cleaning up"
 find . -type f | grep -v "$FILE_WITH_EXTENSION" | xargs rm -fr
 
 # Go back to original directory
 popd > /dev/null
-
-#echo "     tar -xzvf ${tkgrimage}.tar.gz"
-#echo "     cd ${tkgrimage}"
-#echo "     govc library.import -n ${tkgrimage} -m=true Local photon-ova.ovf"
-#echo "     or"
-#echo "     govc library.import -n ${tkgrimage} -m=true Local ubuntu-ova.ovf"

@@ -138,6 +138,7 @@ install_operator() {
         --set driver.version="${VGPU_DRIVER_VERSION}" \
         --set driver.licensingConfig.configMapName="licensing-config" \
         --set driver.manager.repository=${PRIVATE_REGISTRY}/nvidia/cloud-native \
+        --set driver.repoConfig.configMapName="repo-config" \
         --set operator.repository=${PRIVATE_REGISTRY}/nvidia \
         --set nodeStatusExporter.repository=${PRIVATE_REGISTRY}/nvidia/cloud-native \
         --set toolkit.repository=${PRIVATE_REGISTRY}/nvidia/k8s \

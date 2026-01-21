@@ -8,7 +8,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 mkdir -p "${REGISTRY_CERT_FOLDER}"
-sudo apt install -y ca-certificates
+# sudo apt install -y ca-certificates
 cakeyfile=${REGISTRY_CERT_FOLDER}/$(hostname)-ca.key
 cacrtfile=${REGISTRY_CERT_FOLDER}/$(hostname)-ca.crt
 

@@ -2,7 +2,8 @@ supervisor-services-tar/*
 supervisor-services-yml/*
 vcf-common-files-bin/*
 kubernetes-releases-ova/*
-dlvm-releases-ova/
+dlvm-releases-ova/*
+Photon-Only/*
 get_helm.sh
 kubectl
 item.json

@@ -1,0 +1,16 @@
+apiVersion: nvidia.com/v1alpha1
+kind: NVIDIADriver
+metadata:
+  name: driver-580-105-08
+spec:
+  # The major branch version
+  version: "580.105.08"
+  # Set this to your local registry where you pushed the image
+  repository: "rp-r169-env1-harbor.pse.lab"
+  image: "driver"
+  # Use the exact tag you built
+  # imageTag: "580.105.08-6.8.0-90-generic-ubuntu22.04"
+  usePrecompiled: true
+  # Optional: Limit this driver to specific nodes
+  nodeSelector:
+    nvidia.com/gpu.present: "true"

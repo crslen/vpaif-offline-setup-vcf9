@@ -3,52 +3,46 @@
         "nvcr.io/nvidia/pytorch-pb24h1:24.03.02-py3",
         "nvcr.io/nvidia/tensorflow-pb24h1:24.03.02-tf2-py3",
         "nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda11.7.1-ubi8",
-		"nvcr.io/nim/meta/llama-3.1-8b-instruct:1.8.3",
-		"nvcr.io/nim/nvidia/nv-embedqa-e5-v5:1.5.1",
-		"pgvector/pgvector:pg16",
+		"nvcr.io/nim/meta/llama-3.1-8b-instruct:1.15.2",
+		"nvcr.io/nim/nvidia/nv-embedqa-e5-v5:1.10.1",
 		"nvcr.io/nvidia/aiworkflows/rag-playground:24.08",
 		"nvcr.io/nvidia/aiworkflows/rag-application-multiturn-chatbot:24.08",
         "projects.packages.broadcom.com/vra/tkg-gpu-console:v1.0",
-        "registry.k8s.io/nfd/node-feature-discovery:v0.16.6",
-        "nvcr.io/nvidia/gpu-operator:v25.3.0",
-        "nvcr.io/nvidia/cloud-native/k8s-driver-manager:v0.8.0",
-        "nvcr.io/nvidia/cloud-native/gpu-operator-validator:v25.3.0",
+        "registry.k8s.io/nfd/node-feature-discovery:v0.18.3",
+        "nvcr.io/nvidia/cloud-native/k8s-driver-manager:v0.9.1",
+        "nvcr.io/nvidia/cloud-native/gpu-operator-validator:v25.3.4",
         "nvcr.io/nvidia/vgpu/vgpu-guest-driver-6:570.124.06-ubuntu22.04",
-        "nvcr.io/nvidia/k8s/container-toolkit:v1.17.5-ubuntu20.04",
-        "nvcr.io/nvidia/k8s-device-plugin:v0.17.1",
-        "nvcr.io/nvidia/k8s/dcgm-exporter:4.1.1-4.0.4-ubuntu22.04",
+		"nvcr.io/nvidia/vgpu/vgpu-guest-driver-7:580.105.08-ubuntu22.04",
+        "nvcr.io/nvidia/k8s/container-toolkit:v1.18.1",
+        "nvcr.io/nvidia/k8s-device-plugin:v0.18.1",
         "nvcr.io/nvidia/vgpu/vgpu-guest-driver-5:550.127.05-ubuntu22.04",
-        "nvcr.io/nvidia/cloud-native/k8s-mig-manager:v0.10.0-ubuntu20.04",
-        "nvcr.io/nvidia/gpu-operator:v24.9.1",
-        "nvcr.io/nvidia/k8s-device-plugin:v0.17.0",
-        "nvcr.io/nvidia/cloud-native/dcgm:3.3.9-1-ubuntu22.04",
-        "nvcr.io/nvidia/k8s/dcgm-exporter:3.3.9-3.6.1-ubuntu22.04",
-        "nvcr.io/nvidia/cloud-native/vgpu-device-manager:v0.2.8",
-        "nvcr.io/nvidia/cloud-native/gpu-operator-validator:v24.9.1",
-        "nvcr.io/nvidia/k8s/container-toolkit:v1.17.3-ubuntu20.04",
-        "nvcr.io/nvidia/cuda:12.6.3-base-ubi9",
-        "nvcr.io/nvidia/cloud-native/k8s-driver-manager:v0.7.0",
+        "nvcr.io/nvidia/cloud-native/k8s-mig-manager:v0.13.1",
+		"nvcr.io/nvidia/gpu-operator:v25.10.1",
+        "nvcr.io/nvidia/k8s-device-plugin:v0.18.1",
+        "nvcr.io/nvidia/cloud-native/dcgm:4.4.2-1-ubuntu22.04",
+        "nvcr.io/nvidia/cloud-native/vgpu-device-manager:v0.4.1",
+        "nvcr.io/nvidia/cuda:13.0.1-base-ubi9",
         "nvcr.io/nvidia/cloud-native/k8s-kata-manager:v0.2.2",
-        "nvcr.io/nvidia/kubevirt-gpu-device-plugin:v1.2.10",
-        "nvcr.io/nvidia/k8s/dcgm-exporter:3.2.5-3.1.8-ubuntu22.04"
+        "nvcr.io/nvidia/kubevirt-gpu-device-plugin:v1.4.0",
+        "nvcr.io/nvidia/k8s/dcgm-exporter:4.4.2-4.7.0-distroless"
     ],
 	"models":{
 		"llm":[
 			{
 				"name":"llama-3.1-8b-instruct",
-				"uri":"nvcr.io/nim/meta/llama-3.1-8b-instruct:latest",
+				"uri":"nvcr.io/nim/meta/llama-3.1-8b-instruct:1.15.2",
 				"profiles":[
 					{
 						"profile_name":"vllm-fp16-tp1",
-						"profile_id":"4f904d571fe60ff24695b5ee2aa42da58cb460787a968f1e8a09f5a7e862728d"
+						"profile_id":"574eb0765118b2087b5fd6c8684a79e682bd03062f80343cfd9e2140ffa962cd"
 					},
 					{
 						"profile_name":"tensorrt-llm-a100-bf16-tp1",
-						"profile_id":"222d1729a785201e8a021b226d74d227d01418c41b556283ee1bdbf0a818bd94"
+						"profile_id":"bd64acb0c22280fbe31f7d8d3001ecd6272509ac137fb34197a4aec8d9d644af"
 					},
 					{
 						"profile_name":"tensorrt-llm-h100-bf16-tp1",
-						"profile_id":"e7dbd9a8ce6270d2ec649a0fecbcae9b5336566113525f20aee3809ba5e63856"
+						"profile_id":"020fccd5b04e80987cafb4fa3705fb62b60c12eae2e74f71f6eeee6a79b8f2d4"
 					}
 				]
 			}
@@ -56,18 +50,22 @@
 		"embedding":[
 			{
 				"name":"nv-embedqa-e5-v5",
-				"uri":"nvcr.io/nim/nvidia/nv-embedqa-e5-v5-pb24h2:1.2.3",
+				"uri":"nvcr.io/nim/nvidia/nv-embedqa-e5-v5:1.10.1",
 				"profiles":[
 					{
 						"profile_name":"onnx-fp16",
-						"profile_id":"edc693c6fccd68d266622eace04225421e353d7ce31e3b207afc5ff35124127b"
+						"profile_id":"f7391ddbcb95b2406853526b8e489fedf20083a2420563ca3e65358ff417b10f"
+					},
+					{
+						"profile_name":"triton",
+						"profile_id":"f0fb2f72a66230096c40fc3307872ebb9bce69816cbfc6e2918695ca824bd284"
 					}
 				]
 			}
 		]
 	},
     "helm":[
-        "https://helm.ngc.nvidia.com/nvidia/charts/gpu-operator-v25.3.0.tgz",
+        "https://helm.ngc.nvidia.com/nvidia/charts/gpu-operator-v25.10.1.tgz",
         "https://helm.ngc.nvidia.com/nim/charts/nim-llm-1.3.0.tgz",
         "https://helm.ngc.nvidia.com/nim/nvidia/charts/text-embedding-nim-1.2.0.tgz",
         "https://helm.ngc.nvidia.com/nvidia/aiworkflows/charts/rag-app-multiturn-chatbot-24.08.tgz"
